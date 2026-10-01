@@ -1,0 +1,97 @@
+name: Build and deploy WineGame
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_REPO: andrewnakas/Boxedwine64
+  ROOTFS_RELEASE_TAG: rootfs-pages
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout WineGame
+        uses: actions/checkout@v4
+
+      - name: Get Boxedwine64 source
+        run: git clone --depth 1 https://github.com/${{ env.UPSTREAM_REPO }}.git boxedwine64
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 6.0.0
+          actions-cache-folder: emsdk-cache
+
+      - name: Build WebAssembly
+        working-directory: boxedwine64/project/emscripten
+        run: make wasm64-mt
+
+      - name: Download root filesystem
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          out="boxedwine64/project/emscripten/Build/Wasm64Mt"
+          gh release download "${ROOTFS_RELEASE_TAG}"             --repo "${UPSTREAM_REPO}"             --dir "${out}"             --pattern '*.zip'             --pattern '*.zip.part*'             --pattern '*.manifest.json'             --clobber
+
+      - name: Assemble Pages site
+        run: |
+          set -euo pipefail
+          src="boxedwine64/project/emscripten/Build/Wasm64Mt"
+          site="_site"
+          mkdir -p "${site}"
+
+          cp "${src}/wine64.html" "${site}/"
+          cp "${src}/wine64-launcher.js" "${site}/"
+          cp "${src}/coi-serviceworker.js" "${site}/"
+          cp "${src}/boxedwine.css" "${site}/" 2>/dev/null || true
+          cp "${src}/boxedwine64.js" "${site}/"
+          cp "${src}/boxedwine64.wasm" "${site}/"
+          cp "${src}"/*.zip "${site}/" 2>/dev/null || true
+          cp "${src}"/*.zip.part* "${site}/" 2>/dev/null || true
+          cp "${src}"/*.manifest.json "${site}/"
+
+          cat > "${site}/index.html" <<'HTML'
+          <!doctype html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>WineGame</title>
+            <meta http-equiv="refresh" content="0; url=wine64.html?chunked=1&p=notepad.exe">
+          </head>
+          <body>
+            <p>Starting WineGame…</p>
+            <p><a href="wine64.html?chunked=1&p=notepad.exe">Start manually</a></p>
+          </body>
+          </html>
+          HTML
+          touch "${site}/.nojekyll"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
