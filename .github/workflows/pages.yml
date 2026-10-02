@@ -76,18 +76,41 @@ jobs:
 
           cat > "${site}/index.html" <<'HTML'
           <!doctype html>
-          <html lang="en">
-          <head>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width,initial-scale=1">
+          <html lang="en"><head>
+            <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
             <title>WineGame</title>
-            <meta http-equiv="refresh" content="0; url=wine64.html?chunked=1&p=notepad.exe">
-          </head>
-          <body>
-            <p>Starting WineGame…</p>
-            <p><a href="wine64.html?chunked=1&p=notepad.exe">Start manually</a></p>
-          </body>
-          </html>
+            <style>
+              body{font:16px system-ui,sans-serif;max-width:720px;margin:12vh auto;padding:24px;text-align:center;background:#111;color:#eee}
+              button{font:18px system-ui;padding:14px 22px;margin:8px;border-radius:10px;cursor:pointer}
+              #status{margin-top:18px;min-height:24px;color:#bbb}
+              input{display:none}
+            </style>
+          </head><body>
+            <h1>WineGame</h1>
+            <p>Choose a Windows game. The emulator starts after you choose the file.</p>
+            <input id="game" type="file" accept=".exe,.zip,application/x-msdownload,application/zip,application/octet-stream">
+            <button id="pick">Upload game (.exe / .zip)</button>
+            <p><a href="wine64.html?chunked=1&p=notepad.exe" style="color:#aaa">Open emulator without a game</a></p>
+            <div id="status"></div>
+            <script>
+            const input=document.getElementById('game'),status=document.getElementById('status');
+            document.getElementById('pick').onclick=()=>input.click();
+            input.onchange=async()=>{
+              const f=input.files[0]; if(!f)return;
+              status.textContent='Preparing '+f.name+'…';
+              try{
+                const req=indexedDB.open('winegame-upload',1);
+                req.onupgradeneeded=()=>req.result.createObjectStore('files');
+                req.onsuccess=()=>{
+                  const db=req.result,tx=db.transaction('files','readwrite');
+                  tx.objectStore('files').put({name:f.name,type:f.type,bytes:f.arrayBuffer()},'pending');
+                  tx.oncomplete=()=>location.href='wine64.html?chunked=1&p=notepad.exe&autogame=1';
+                };
+                req.onerror=()=>{status.textContent='Could not prepare the upload.'};
+              }catch(e){status.textContent='Could not prepare the upload: '+e};
+            };
+            </script>
+          </body></html>
           HTML
           touch "${site}/.nojekyll"
 
