@@ -46,6 +46,9 @@ jobs:
           out="boxedwine64/project/emscripten/Build/Wasm64Mt"
           gh release download "${ROOTFS_RELEASE_TAG}"             --repo "${UPSTREAM_REPO}"             --dir "${out}"             --pattern '*.zip'             --pattern '*.zip.part*'             --pattern '*.manifest.json'             --clobber
 
+      - name: Add game upload support
+        run: python3 tools/patch_wine64_upload.py
+
       - name: Assemble Pages site
         run: |
           set -euo pipefail
