@@ -21,6 +21,23 @@ if old not in s:
     raise SystemExit("expected upload HTML not found")
 html.write_text(s.replace(old, new))
 
+# Add a graphics-backend selector. The current browser build exposes OpenGL/WebGL2 and experimental D3D9/WineD3D; Vulkan/DXVK are labeled fallbacks.
+gfx_marker = '<div id="winegame-gfx" class="tbhint" style="margin:8px 0"></div>'
+if gfx_marker not in s:
+    gfx_html = r'''<div id="winegame-gfx" class="tbhint" style="margin:8px 0"></div>
+<script>
+(function(){
+  var box=document.getElementById("winegame-gfx"); if(!box)return;
+  var sel=document.createElement("select");
+  [["auto","Auto"],["opengl","OpenGL / WebGL2"],["direct3d","Direct3D / WineD3D"],["software","Software"],["vulkan","Vulkan (fallback)"],["dxvk","DXVK (fallback)"]].forEach(function(x){var o=document.createElement("option");o.value=x[0];o.textContent=x[1];sel.appendChild(o)});
+  sel.value=localStorage.getItem("winegame-gfx")||"auto";
+  sel.onchange=function(){localStorage.setItem("winegame-gfx",sel.value); location.reload()};
+  box.textContent="Graphics: "; box.appendChild(sel);
+  if(sel.value==="vulkan"||sel.value==="dxvk") box.appendChild(document.createTextNode(" — browser build falls back to WebGL2/WineD3D"));
+})();
+</script>'''
+    s = s.replace('</body>', gfx_html + '\n</body>')
+
 # Replace the single-file uploader with a general game importer.
 src = js.read_text()
 start = src.index("    // --- upload-your-own .exe")
