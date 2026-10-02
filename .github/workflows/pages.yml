@@ -54,8 +54,11 @@ jobs:
 
       - name: Validate generated launcher
         run: |
-          node --check boxedwine64/project/emscripten/Build/Wasm64Mt/wine64-launcher.js
+          set -euo pipefail
+          test -s boxedwine64/project/emscripten/Build/Wasm64Mt/wine64-launcher.js
           grep -q "Upload game" boxedwine64/project/emscripten/Build/Wasm64Mt/wine64.html
+          grep -q "window.uploadGameFile" boxedwine64/project/emscripten/Build/Wasm64Mt/wine64-launcher.js
+          grep -q "bw64_register_file" boxedwine64/project/emscripten/Build/Wasm64Mt/wine64-launcher.js
 
       - name: Assemble Pages site
         run: |
