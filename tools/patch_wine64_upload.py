@@ -51,7 +51,7 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
     }
 
     function bw64WriteGuestFile(rel, bytes) {
-        var clean = rel.replace(/\\/g, "/").replace(/^/+/, "");
+        var clean = rel.replace(/\\/g, "/").replace(/^\/+/, "");
         if (!clean || clean.endsWith("/")) return;
         var parts = clean.split("/").filter(Boolean);
         var path = HOME_IN_MEMFS;
@@ -86,7 +86,7 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
     }
 
     function bw64LaunchGuestExe(guestPath) {
-        var winPath = "Z:\\" + guestPath.replace(/^/+/, "").replace(///g, "\\");
+        var winPath = "Z:\\" + guestPath.replace(/^/+/, "").replace(/\//g, "\\");
         if (window.launchApp) window.launchApp(winPath);
         else window.location.search = "?p=" + encodeURIComponent(winPath);
     }
@@ -113,7 +113,7 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
                     reader.onload = function () {
                         try {
                             var guest = bw64WriteGuestFile(rel, new Uint8Array(reader.result));
-                            if (guest && /.exe$/i.test(rel)) exes.push(guest.replace(/^/home/username//, ""));
+                            if (guest && /.exe$/i.test(rel)) exes.push(guest.replace(/^\/home\/username\//, ""));
                             resolve();
                         } catch (e) { reject(e); }
                     };
