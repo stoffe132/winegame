@@ -31,7 +31,7 @@ if gfx_marker not in s:
   var sel=document.createElement("select");
   [["auto","Auto"],["opengl","OpenGL / WebGL2"],["direct3d","Direct3D / WineD3D"],["software","Software"],["vulkan","Vulkan (fallback)"],["dxvk","DXVK (fallback)"]].forEach(function(x){var o=document.createElement("option");o.value=x[0];o.textContent=x[1];sel.appendChild(o)});
   sel.value=localStorage.getItem("winegame-gfx")||"auto";
-  sel.onchange=function(){localStorage.setItem("winegame-gfx",sel.value); location.reload()};
+  sel.onchange=function(){localStorage.setItem("winegame-gfx",sel.value); var u=new URL(location.href); u.searchParams.set("gfx",sel.value); location.href=u.toString()};
   box.textContent="Graphics: "; box.appendChild(sel);
   if(sel.value==="vulkan"||sel.value==="dxvk") box.appendChild(document.createTextNode(" — browser build falls back to WebGL2/WineD3D"));
 })();
