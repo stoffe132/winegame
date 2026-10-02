@@ -228,5 +228,26 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
     window.uploadGameFolder = uploadGameFolder;
     window.uploadAndRunExe = uploadGameFile;
 
+    // Import a game queued by the lightweight landing page before the emulator booted.
+    (function () {
+        try {
+            var req = indexedDB.open("winegame-upload", 1);
+            req.onupgradeneeded = function () { req.result.createObjectStore("files"); };
+            req.onsuccess = function () {
+                var db = req.result;
+                var tx = db.transaction("files", "readwrite");
+                var get = tx.objectStore("files").get("pending");
+                get.onsuccess = function () {
+                    var v = get.result;
+                    if (!v) return;
+                    tx = db.transaction("files", "readwrite");
+                    tx.objectStore("files").delete("pending");
+                    try { uploadGameFile(new File([v.bytes], v.name, {type:v.type || "application/octet-stream"})); }
+                    catch (e) { console.error(e); }
+                };
+            };
+        } catch (e) { console.error(e); }
+    })();
+
 '''
 js.write_text(src[:start] + replacement + src[end:])
