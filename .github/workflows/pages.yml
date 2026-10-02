@@ -103,8 +103,10 @@ jobs:
                 req.onupgradeneeded=()=>req.result.createObjectStore('files');
                 req.onsuccess=()=>{
                   const db=req.result,tx=db.transaction('files','readwrite');
-                  tx.objectStore('files').put({name:f.name,type:f.type,bytes:f.arrayBuffer()},'pending');
-                  tx.oncomplete=()=>location.href='wine64.html?chunked=1&p=notepad.exe&autogame=1';
+                  f.arrayBuffer().then(bytes=>{
+                    tx.objectStore('files').put({name:f.name,type:f.type,bytes:bytes},'pending');
+                    tx.oncomplete=()=>location.href='wine64.html?chunked=1&p=notepad.exe&autogame=1';
+                  }).catch(()=>{status.textContent='Could not read the selected file.'});
                 };
                 req.onerror=()=>{status.textContent='Could not prepare the upload.'};
               }catch(e){status.textContent='Could not prepare the upload: '+e};
