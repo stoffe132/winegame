@@ -48,6 +48,14 @@ jobs:
 
       - name: Add game upload support
         run: python3 tools/patch_wine64_upload.py
+      - name: Validate upload patch
+        run: |
+          python3 -m py_compile tools/patch_wine64_upload.py
+          python3 tools/patch_wine64_upload.py
+          node --check boxedwine64/project/emscripten/Build/Wasm64Mt/wine64-launcher.js
+          grep -q "Upload game" boxedwine64/project/emscripten/Build/Wasm64Mt/wine64.html
+
+
 
       - name: Assemble Pages site
         run: |
