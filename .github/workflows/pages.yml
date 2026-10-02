@@ -46,16 +46,16 @@ jobs:
           out="boxedwine64/project/emscripten/Build/Wasm64Mt"
           gh release download "${ROOTFS_RELEASE_TAG}"             --repo "${UPSTREAM_REPO}"             --dir "${out}"             --pattern '*.zip'             --pattern '*.zip.part*'             --pattern '*.manifest.json'             --clobber
 
+      - name: Validate patch script
+        run: python3 -m py_compile tools/patch_wine64_upload.py
+
       - name: Add game upload support
         run: python3 tools/patch_wine64_upload.py
-      - name: Validate upload patch
+
+      - name: Validate generated launcher
         run: |
-          python3 -m py_compile tools/patch_wine64_upload.py
-          python3 tools/patch_wine64_upload.py
           node --check boxedwine64/project/emscripten/Build/Wasm64Mt/wine64-launcher.js
           grep -q "Upload game" boxedwine64/project/emscripten/Build/Wasm64Mt/wine64.html
-
-
 
       - name: Assemble Pages site
         run: |
