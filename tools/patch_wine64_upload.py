@@ -86,7 +86,7 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
     }
 
     function bw64LaunchGuestExe(guestPath) {
-        var winPath = "Z:\\" + guestPath.replace(/^/+/, "").replace(/\//g, "\\");
+        var winPath = "Z:\\" + guestPath.replace(/^\/+/, "").replace(/\//g, "\\");
         if (window.launchApp) window.launchApp(winPath);
         else window.location.search = "?p=" + encodeURIComponent(winPath);
     }
@@ -105,7 +105,7 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
                 var rel = file.webkitRelativePath || file.name;
                 // A plain .exe is placed at the root; folder uploads preserve
                 // their relative game directory.
-                rel = rel.replace(/^[^/]+/(?=[^/]+/)/, "");
+                rel = rel.replace(/^[^/]+\/(?=[^/]+\/)/, "");
                 if (/.exe$/i.test(rel)) exes.push(rel);
                 writes.push(new Promise(function (resolve, reject) {
                     var reader = new FileReader();
@@ -127,19 +127,19 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
                 // uploads the paths are relative; for a direct EXE it is its name.
                 list.forEach(function (f) {
                     var rel = f.webkitRelativePath || f.name;
-                    rel = rel.replace(/^[^/]+/(?=[^/]+/)/, "");
+                    rel = rel.replace(/^[^/]+\/(?=[^/]+\/)/, "");
                     if (/.exe$/i.test(rel)) exes.push(rel);
                 });
                 var picked = bw64PickExe(exes);
                 if (!picked) return;
-                var guest = "/home/username/" + picked.replace(/^/+/, "");
+                var guest = "/home/username/" + picked.replace(/^\/+/, "");
                 callExport("bw64_register_file", ["string"], [guest]);
                 // Register every file so sibling DLLs/data files are visible.
                 var all = [];
                 list.forEach(function (f) {
                     var rel = f.webkitRelativePath || f.name;
-                    rel = rel.replace(/^[^/]+/(?=[^/]+/)/, "");
-                    all.push("/home/username/" + rel.replace(/^/+/, ""));
+                    rel = rel.replace(/^[^/]+\/(?=[^/]+\/)/, "");
+                    all.push("/home/username/" + rel.replace(/^\/+/, ""));
                 });
                 bw64Register(all);
                 bw64LaunchGuestExe(guest);
@@ -203,14 +203,14 @@ replacement = r'''    // --- upload a Windows game (.exe, .zip, or folder) -----
                 return bw64FsReady().then(function () {
                     var all = [];
                     entries.forEach(function (e) {
-                        var name = e.name.replace(/^/+/, "");
+                        var name = e.name.replace(/^\/+/, "");
                         if (!name || name.endsWith("/")) return;
                         var guest = bw64WriteGuestFile(name, e.bytes);
                         all.push(guest);
                     });
                     bw64Register(all);
                     var picked = bw64PickExe(exes.map(function (e) { return e.name; }));
-                    if (picked) bw64LaunchGuestExe("/home/username/" + picked.replace(/^/+/, ""));
+                    if (picked) bw64LaunchGuestExe("/home/username/" + picked.replace(/^\/+/, ""));
                 });
             }).catch(function (e) {
                 console.error(e); alert("Could not read the ZIP: " + e);
